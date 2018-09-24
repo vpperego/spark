@@ -91,6 +91,186 @@ object PhysicalOperation extends PredicateHelper {
   }
 }
 
+
+
+object ExtractAllKeys extends Logging with PredicateHelper {
+  /** (joinType, leftKeys, rightKeys, condition, leftChild, rightChild) */
+  type ReturnType =
+    (JoinType, Seq[Expression], Seq[Expression], Option[Expression], LogicalPlan, LogicalPlan)
+
+  def unapply(plan: LogicalPlan ): Option[ReturnType] = plan match {
+    case join @ Join(left, right, joinType, condition) =>
+      val predicates = condition.map(splitConjunctivePredicates).getOrElse(Nil)
+      // scalastyle:off println
+      println("\n\n\nVERIFICANDO JOIN KEYS ================== \n\n\n")
+      // scalastyle:on println
+      val joinKeys = predicates.flatMap {
+        case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty => None
+        case EqualTo(l, r) if canEvaluate(l, left) && canEvaluate(r, right) => Some((l, r))
+        case EqualTo(l, r) if canEvaluate(l, right) && canEvaluate(r, left) => Some((r, l))
+        case LessThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
+          // scalastyle:off println
+          println("\n\n\nLessThan1 ================== \n\n\n")
+        // scalastyle:on println
+        None
+        case LessThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+          // scalastyle:off println
+          println("\n\n\nLessThan2 ================== \n\n\n")
+        // scalastyle:on println
+        Some((l, r))
+        case LessThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+          // scalastyle:off println
+          println("\n\n\nLessThan3 ================== \n\n\n")
+        // scalastyle:on println
+         Some((r, l))
+        case LessThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty => None
+        case LessThanOrEqual(l, r) if canEvaluate(l, left) && canEvaluate(r, right) => Some((l, r))
+        case LessThanOrEqual(l, r) if canEvaluate(l, right) && canEvaluate(r, left) => Some((r, l))
+        case GreaterThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
+          // scalastyle:off println
+          println("\n\n\nGreaterThan1 ================== \n\n\n")
+          // scalastyle:on println
+          None
+        case GreaterThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+          // scalastyle:off println
+          println("\n\n\nGreaterThan2 ================== \n\n\n")
+          // scalastyle:on println
+          Some((l, r))
+
+        case GreaterThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+          // scalastyle:off println
+          println("\n\n\nGreaterThan3 ================== \n\n\n")
+          // scalastyle:on println
+          Some((r, l))
+        case GreaterThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty => None
+        case GreaterThanOrEqual(l, r)
+          if canEvaluate(l, left) && canEvaluate(r, right) => Some((l, r))
+        case GreaterThanOrEqual(l, r)
+          if canEvaluate(l, right) && canEvaluate(r, left) => Some((r, l))
+        // Replace null with default value for joining key, then those rows with null in it could
+        // be joined together
+        case EqualNullSafe(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+          Some((Coalesce(Seq(l, Literal.default(l.dataType))),
+            Coalesce(Seq(r, Literal.default(r.dataType)))))
+        case EqualNullSafe(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+          Some((Coalesce(Seq(r, Literal.default(r.dataType))),
+            Coalesce(Seq(l, Literal.default(l.dataType)))))
+        case other =>
+          // scalastyle:off println
+          println("\n\n\nother ================== \n\n\n")
+          // scalastyle:on println
+          None
+      }
+
+
+
+
+
+//      joinKeys.foreach{
+//
+//        case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty =>
+//          // scalastyle:off println
+//          println("EqualTo")
+//        // scalastyle:on println
+//        case EqualTo(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("EqualTo")
+//        // scalastyle:on println
+//        case EqualTo(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("EqualTo")
+//        // scalastyle:on println
+//        case LessThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
+//          // scalastyle:off println
+//          println("LessThan")
+//        // scalastyle:on println
+//        case LessThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("LessThan")
+//        // scalastyle:on println
+//        case LessThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("LessThan")
+//        // scalastyle:on println
+//        case LessThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty =>
+//          // scalastyle:off println
+//          println("LessThanOrEqual")
+//        // scalastyle:on println
+//        case LessThanOrEqual(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("LessThanOrEqual")
+//        // scalastyle:on println
+//        case LessThanOrEqual(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("LessThanOrEqual")
+//        // scalastyle:on println
+//        case GreaterThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
+//          // scalastyle:off println
+//          println("GreaterThan")
+//        // scalastyle:on println
+//        case GreaterThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("GreaterThan")
+//        // scalastyle:on println
+//        case GreaterThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("GreaterThan")
+//        // scalastyle:on println
+//        case GreaterThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty =>
+//          // scalastyle:off println
+//          println("GreaterThanOrEqual")
+//        // scalastyle:on println
+//        case GreaterThanOrEqual(l, r)
+//          if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("GreaterThanOrEqual")
+//        // scalastyle:on println
+//        case GreaterThanOrEqual(l, r)
+//          if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("GreaterThanOrEqual")
+//        // scalastyle:on println
+//        // Replace null with default value for joining key, then those rows with null in it could
+//        // be joined together
+//        case EqualNullSafe(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
+//          // scalastyle:off println
+//          println("EqualNullSafe")
+//        // scalastyle:on println
+//        case EqualNullSafe(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
+//          // scalastyle:off println
+//          println("EqualNullSafe")
+//        // scalastyle:on println
+//        case other =>
+//          // scalastyle:off println
+//          println("other")
+//        // scalastyle:on println
+//
+//      }
+//      val otherPredicates = predicates.filterNot {
+//        case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty => false
+//        case EqualTo(l, r) =>
+//          canEvaluate(l, left) && canEvaluate(r, right) ||
+//            canEvaluate(l, right) && canEvaluate(r, left)
+//        case other => false
+//      }
+
+      if (joinKeys.nonEmpty) {
+        val (leftKeys, rightKeys) = joinKeys.unzip
+        logDebug(s"leftKeys:$leftKeys | rightKeys:$rightKeys")
+        Some((joinType, leftKeys, rightKeys, predicates.reduceOption(And), left, right))
+      } else {
+
+        None
+      }
+
+    case _ =>
+
+      None
+
+  }
+
+}
+
 /**
  * A pattern that finds joins with equality conditions that can be evaluated using equi-join.
  *

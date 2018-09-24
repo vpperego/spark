@@ -35,6 +35,7 @@ import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide}
 import org.apache.spark.sql.execution.python._
 import org.apache.spark.sql.execution.streaming._
 import org.apache.spark.sql.execution.streaming.sources.MemoryPlanV2
+import org.apache.spark.sql.execution.streaming.state.newStreamJoin
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.streaming.{OutputMode, StreamingQuery}
 import org.apache.spark.sql.types.StructType
@@ -380,15 +381,19 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
   object StreamingJoinStrategy extends Strategy {
     override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
       plan match {
+        case ExtractAllKeys(joinType, leftKeys, rightKeys, condition, left, right)
+          if left.isStreaming && right.isStreaming =>
+          new newStreamJoin(
+            leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
         case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
           if left.isStreaming && right.isStreaming =>
 
           new StreamingSymmetricHashJoinExec(
             leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
 
-        case Join(left, right, _, _) if left.isStreaming && right.isStreaming =>
-          throw new AnalysisException(
-            "Stream-stream join without equality predicate is not supported", plan = Some(plan))
+//        case Join(left, right, _, _) if left.isStreaming && right.isStreaming =>
+//          throw new AnalysisException(
+//            "Stream-stream join without equality predicate is not supported", plan = Some(plan))
 
         case _ => Nil
       }
