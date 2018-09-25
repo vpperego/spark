@@ -236,7 +236,6 @@ case class newStreamJoin (
 
       val nonLateRows = inputIter
       // scalastyle:off println
-      println("\n\n\nfazendo join sem filtros \n\n\n")
 
       nonLateRows.flatMap { row =>
         val thisRow = row.asInstanceOf[UnsafeRow]
@@ -247,8 +246,7 @@ case class newStreamJoin (
 //        if (preJoinFilter(thisRow)) {//TODO - COLOCAR ESSE FILTRO NOVAMENTE ???
           val key = keyGenerator(thisRow)
           val outputIter = otherSideJoiner.joinStateManager
-
-            .get(key).map { thatRow =>
+             .getAllKeys.map { thatRow =>
             println("This Row " + thisRow.toString + "\t\tThat row:" + thatRow.toString)
             // scalastyle:on println
 

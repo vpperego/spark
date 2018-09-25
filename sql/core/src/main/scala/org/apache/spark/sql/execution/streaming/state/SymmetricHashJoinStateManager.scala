@@ -79,6 +79,13 @@ class SymmetricHashJoinStateManager(
     keyWithIndexToValue.getAll(key, numValues).map(_.value)
   }
 
+  def getAllKeys : Iterator[UnsafeRow] = {
+    keyToNumValues.iterator.flatMap{ k =>
+      val numValues = keyToNumValues.get(k.key)
+      keyWithIndexToValue.getAll(k.key, numValues).map(_.value)
+    }
+  }
+  
   /** Append a new value to the key */
   def append(key: UnsafeRow, value: UnsafeRow): Unit = {
     val numExistingValues = keyToNumValues.get(key)
