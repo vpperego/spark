@@ -155,104 +155,18 @@ object ExtractAllKeys extends Logging with PredicateHelper {
         case EqualNullSafe(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
           Some((Coalesce(Seq(r, Literal.default(r.dataType))),
             Coalesce(Seq(l, Literal.default(l.dataType)))))
-        case other =>
+        case If(Or(IsNull(l), IsNull(r)), _, _)  if canEvaluate(l, left) && canEvaluate(r, right) =>
+          Some((l, r))
+
+        case If(Or(IsNull(l), IsNull(r)), _, _)  if canEvaluate(r, left) && canEvaluate(l, right) =>
+          Some((r, l))
+
+         case other =>
           // scalastyle:off println
           println("\n\n\nother ================== \n\n\n")
           // scalastyle:on println
           None
       }
-
-
-
-
-
-//      joinKeys.foreach{
-//
-//        case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty =>
-//          // scalastyle:off println
-//          println("EqualTo")
-//        // scalastyle:on println
-//        case EqualTo(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("EqualTo")
-//        // scalastyle:on println
-//        case EqualTo(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("EqualTo")
-//        // scalastyle:on println
-//        case LessThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
-//          // scalastyle:off println
-//          println("LessThan")
-//        // scalastyle:on println
-//        case LessThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("LessThan")
-//        // scalastyle:on println
-//        case LessThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("LessThan")
-//        // scalastyle:on println
-//        case LessThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty =>
-//          // scalastyle:off println
-//          println("LessThanOrEqual")
-//        // scalastyle:on println
-//        case LessThanOrEqual(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("LessThanOrEqual")
-//        // scalastyle:on println
-//        case LessThanOrEqual(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("LessThanOrEqual")
-//        // scalastyle:on println
-//        case GreaterThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
-//          // scalastyle:off println
-//          println("GreaterThan")
-//        // scalastyle:on println
-//        case GreaterThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("GreaterThan")
-//        // scalastyle:on println
-//        case GreaterThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("GreaterThan")
-//        // scalastyle:on println
-//        case GreaterThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty =>
-//          // scalastyle:off println
-//          println("GreaterThanOrEqual")
-//        // scalastyle:on println
-//        case GreaterThanOrEqual(l, r)
-//          if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("GreaterThanOrEqual")
-//        // scalastyle:on println
-//        case GreaterThanOrEqual(l, r)
-//          if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("GreaterThanOrEqual")
-//        // scalastyle:on println
-//        // Replace null with default value for joining key, then those rows with null in it could
-//        // be joined together
-//        case EqualNullSafe(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-//          // scalastyle:off println
-//          println("EqualNullSafe")
-//        // scalastyle:on println
-//        case EqualNullSafe(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-//          // scalastyle:off println
-//          println("EqualNullSafe")
-//        // scalastyle:on println
-//        case other =>
-//          // scalastyle:off println
-//          println("other")
-//        // scalastyle:on println
-//
-//      }
-//      val otherPredicates = predicates.filterNot {
-//        case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty => false
-//        case EqualTo(l, r) =>
-//          canEvaluate(l, left) && canEvaluate(r, right) ||
-//            canEvaluate(l, right) && canEvaluate(r, left)
-//        case other => false
-//      }
 
       if (joinKeys.nonEmpty) {
         val (leftKeys, rightKeys) = joinKeys.unzip
