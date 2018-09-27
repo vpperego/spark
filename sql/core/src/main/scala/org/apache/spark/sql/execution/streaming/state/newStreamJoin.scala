@@ -22,13 +22,12 @@ import java.util.concurrent.TimeUnit.NANOSECONDS
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, EqualTo, Expression, GenericInternalRow, JoinedRow, Literal, UnsafeProjection, UnsafeRow}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericInternalRow, JoinedRow, Literal, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
-import org.apache.spark.sql.catalyst.plans.logical.EventTimeWatermark.delayKey
 import org.apache.spark.sql.catalyst.plans.physical.{Distribution, HashClusteredDistribution}
-import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
-import org.apache.spark.sql.execution.streaming.{StatefulOperatorStateInfo, StateStoreWriter, StreamingSymmetricHashJoinExec}
 import org.apache.spark.sql.execution.streaming.StreamingSymmetricHashJoinHelper._
+import org.apache.spark.sql.execution.streaming.{StateStoreWriter, StatefulOperatorStateInfo}
+import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
 import org.apache.spark.sql.internal.SessionState
 import org.apache.spark.util.{CompletionIterator, SerializableConfiguration}
 
@@ -69,9 +68,9 @@ case class newStreamJoin (
       sparkContext.hadoopConfiguration, sqlContext.conf)))
 
   // TODO - not sture if this is correct for this join.
-//  override def requiredChildDistribution: Seq[Distribution] =
-//    HashClusteredDistribution(leftKeys, stateInfo.map(_.numPartitions)) ::
-//      HashClusteredDistribution(rightKeys, stateInfo.map(_.numPartitions)) :: Nil
+  override def requiredChildDistribution: Seq[Distribution] =
+    HashClusteredDistribution(leftKeys, stateInfo.map(_.numPartitions)) ::
+      HashClusteredDistribution(rightKeys, stateInfo.map(_.numPartitions)) :: Nil
 
   override def output: Seq[Attribute] = {
     left.output ++ right.output
@@ -107,8 +106,8 @@ case class newStreamJoin (
     val joinedRow = new JoinedRow
 
     // scalastyle:off println
-    println("\n\n\nIMPRIMINDO CONDITIONS : \n")
-    println(condition.toString() + "\n\n\n")
+//    println("\n\n\nIMPRIMINDO CONDITIONS : \n")
+//    println(condition.toString() + "\n\n\n")
 
     // scalastyle:on println
 
@@ -247,10 +246,9 @@ case class newStreamJoin (
           val key = keyGenerator(thisRow)
           val outputIter = otherSideJoiner.joinStateManager
              .getAllKeys.map { thatRow =>
-            println("This Row " + thisRow.toString + "\t\tThat row:" + thatRow.toString)
+//            println("This Row " + thisRow.toString + "\t\tThat row:" + thatRow.toString)
             // scalastyle:on println
 
-            thatRow.toString
             generateJoinedRow(thisRow, thatRow)
           }.filter(postJoinFilter) // TODO - APLICAR O FILTRO NOVAMENTE ???
           joinStateManager.append(key, thisRow)
