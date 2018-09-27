@@ -1554,6 +1554,14 @@ object SQLConf {
     .internal()
     .booleanConf
     .createWithDefault(false)
+
+  val FORCE_CROSS_JOIN = buildConf("spark.sql.forceCrossJoin")
+    .doc("If it is set to true, " +
+      "Spark Strategies will execute " +
+      "cross product instead of the stream join")
+    .booleanConf
+    .createWithDefault(false)
+
 }
 
 /**
@@ -1965,6 +1973,7 @@ class SQLConf extends Serializable with Logging {
 
   def integralDivideReturnLong: Boolean = getConf(SQLConf.LEGACY_INTEGRALDIVIDE_RETURN_LONG)
 
+  def forceCrossProduct: Boolean = getConf(SQLConf.FORCE_CROSS_JOIN)
   /** ********************** SQLConf functionality methods ************ */
 
   /** Set Spark SQL configuration properties. */

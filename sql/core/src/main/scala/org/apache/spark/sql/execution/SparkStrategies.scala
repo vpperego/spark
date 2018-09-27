@@ -382,14 +382,14 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
     override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
       plan match {
         case ExtractAllKeys(joinType, leftKeys, rightKeys, condition, left, right)
-          if left.isStreaming && right.isStreaming =>
+          if left.isStreaming && right.isStreaming && !conf.getConf(SQLConf.FORCE_CROSS_JOIN) =>
           new newStreamJoin(
             leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
-        case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
-          if left.isStreaming && right.isStreaming =>
-
-          new StreamingSymmetricHashJoinExec(
-            leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
+//        case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
+//          if left.isStreaming && right.isStreaming =>
+//
+//          new StreamingSymmetricHashJoinExec(
+//            leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
 
 //        case Join(left, right, _, _) if left.isStreaming && right.isStreaming =>
 //          throw new AnalysisException(

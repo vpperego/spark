@@ -101,46 +101,25 @@ object ExtractAllKeys extends Logging with PredicateHelper {
   def unapply(plan: LogicalPlan ): Option[ReturnType] = plan match {
     case join @ Join(left, right, joinType, condition) =>
       val predicates = condition.map(splitConjunctivePredicates).getOrElse(Nil)
-      // scalastyle:off println
-      println("\n\n\nVERIFICANDO JOIN KEYS ================== \n\n\n")
-      // scalastyle:on println
+
       val joinKeys = predicates.flatMap {
         case EqualTo(l, r) if l.references.isEmpty || r.references.isEmpty => None
         case EqualTo(l, r) if canEvaluate(l, left) && canEvaluate(r, right) => Some((l, r))
         case EqualTo(l, r) if canEvaluate(l, right) && canEvaluate(r, left) => Some((r, l))
         case LessThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
-          // scalastyle:off println
-          println("\n\n\nLessThan1 ================== \n\n\n")
-        // scalastyle:on println
-        None
+          None
         case LessThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-          // scalastyle:off println
-          println("\n\n\nLessThan2 ================== \n\n\n")
-        // scalastyle:on println
-        Some((l, r))
+          Some((l, r))
         case LessThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-          // scalastyle:off println
-          println("\n\n\nLessThan3 ================== \n\n\n")
-        // scalastyle:on println
-         Some((r, l))
+          Some((r, l))
         case LessThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty => None
         case LessThanOrEqual(l, r) if canEvaluate(l, left) && canEvaluate(r, right) => Some((l, r))
         case LessThanOrEqual(l, r) if canEvaluate(l, right) && canEvaluate(r, left) => Some((r, l))
         case GreaterThan(l, r) if l.references.isEmpty || r.references.isEmpty =>
-          // scalastyle:off println
-          println("\n\n\nGreaterThan1 ================== \n\n\n")
-          // scalastyle:on println
           None
         case GreaterThan(l, r) if canEvaluate(l, left) && canEvaluate(r, right) =>
-          // scalastyle:off println
-          println("\n\n\nGreaterThan2 ================== \n\n\n")
-          // scalastyle:on println
           Some((l, r))
-
         case GreaterThan(l, r) if canEvaluate(l, right) && canEvaluate(r, left) =>
-          // scalastyle:off println
-          println("\n\n\nGreaterThan3 ================== \n\n\n")
-          // scalastyle:on println
           Some((r, l))
         case GreaterThanOrEqual(l, r) if l.references.isEmpty || r.references.isEmpty => None
         case GreaterThanOrEqual(l, r)
@@ -160,11 +139,7 @@ object ExtractAllKeys extends Logging with PredicateHelper {
 
         case If(Or(IsNull(l), IsNull(r)), _, _)  if canEvaluate(r, left) && canEvaluate(l, right) =>
           Some((r, l))
-
          case other =>
-          // scalastyle:off println
-          println("\n\n\nother ================== \n\n\n")
-          // scalastyle:on println
           None
       }
 
