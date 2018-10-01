@@ -68,9 +68,9 @@ case class newStreamJoin (
       sparkContext.hadoopConfiguration, sqlContext.conf)))
 
   // TODO - not sture if this is correct for this join.
-  override def requiredChildDistribution: Seq[Distribution] =
-    HashClusteredDistribution(leftKeys, stateInfo.map(_.numPartitions)) ::
-      HashClusteredDistribution(rightKeys, stateInfo.map(_.numPartitions)) :: Nil
+//  override def requiredChildDistribution: Seq[Distribution] =
+//    HashClusteredDistribution(leftKeys, stateInfo.map(_.numPartitions)) ::
+//      HashClusteredDistribution(rightKeys, stateInfo.map(_.numPartitions)) :: Nil
 
   override def output: Seq[Attribute] = {
     left.output ++ right.output
